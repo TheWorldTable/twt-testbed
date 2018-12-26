@@ -1,0 +1,122 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+
+
+<dom-module id="twt-user-info-test">
+
+  <template>
+    <style>
+      :host {
+        margin: 10px 0;
+        min-height: 16px;
+        min-width: 16px;
+        display: block;
+        Xoutline: 2px dashed red;
+      }
+      [twt-uid],[twt-userId] {
+        font-size: 12px;
+        color: blue;
+        font-family: sans-serif;
+      }
+      [twt-user] {
+        font-size: 9px;
+        font-family: monospace;
+        color: blue;
+      }
+      [twt-user-private] {
+        font-size: 9px;
+        font-family: monospace;
+        color: purple;
+      }
+      [twt-oauth-user] {
+        font-size: 9px;
+        font-family: monospace;
+        color: green;
+      }
+    </style>
+    <div>
+      <div twt-uid>[[uid]]</div>
+      <div twt-userId>[[userId]]</div>
+      <firebase-query
+        path="/u"
+      ></firebase-query>
+      <pre twt-user>[[asJson(user)]]</pre>
+      <pre twt-user-private>[[asJson(userPrivate)]]</pre>
+      <pre twt-oauth-user>[[asJson(oauthUser)]]</pre>
+    </div>
+  </template>
+
+</dom-module>
+
+<script>
+  (function() {
+    Polymer({
+      is: 'twt-user-info-test',
+      properties: {
+        uid: {
+          type: String,
+          observer: 'uidChanged'
+        },
+        userId: {
+          type: String,
+          notify: true,
+          reflectToAttribute: true,
+          observer: 'userIdChanged'
+        },
+        oauthUser: {
+          type: Object
+        },
+        user: {
+          type: Object
+        },
+        userPrivate: {
+          type: Object
+        }
+      },
+      observers: [
+      ],
+      attached: function () {
+        if (localStorage && localStorage.twtTestUserId) {
+          this.userId = localStorage.twtTestUserId;
+        }
+      },
+      valueChanged: function (newVal) {
+        console.log('value changed: %o', this.value);
+      },
+      uidChanged: function () {
+        let self = this;
+        console.log('uid changed: %o', this.uid);
+        this.userId = null;
+        if (this.uid) {
+          firebase.database().ref(`externalAccounts/${this.uid}`).once('value').then(function (snap) {
+            self.userId = snap.val();
+            if (self.userId) {
+              localStorage.twtTestUserId = self.userId;
+            }
+          });
+        }
+      },
+      userIdChanged: function () {
+        let self = this;
+        if (self.userId) {
+          firebase.database().ref(`users/${self.userId}`).once('value').then(function (snap) {
+            self.user = snap.val();
+          }).catch(function (err) {
+            self.user = err;
+          });
+          firebase.database().ref(`usersPrivate/${self.userId}`).once('value').then(function (snap) {
+            self.userPrivate = snap.val();
+          }).catch(function (err) {
+            self.userPrivate = err;
+          });
+          localStorage.twtTestUserId = self.userId;
+        } else {
+          self.user = null;
+          self.userPrivate = null;
+        }
+      },
+      asJson: function (value) {
+        return value ? JSON.stringify(value, 0, 2) : '';
+      }
+    });
+  })();
+</script>

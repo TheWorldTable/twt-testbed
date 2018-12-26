@@ -1,0 +1,80 @@
+<html>
+<head>
+  <link rel="icon" type="image/png" href="https://app.worldtable.co/images/logo-table.png" />
+  <title>TWT Test Firebase-Passport Example - Rules Test & firebase-query</title>
+  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-database.js"></script>
+  <script>
+    // Initialize Firebase
+    const prod = {
+          apiKey: "AIzaSyCgU6F6LAYuknFqD90ICKUKan80bu2K7qo",
+          authDomain: "the-world-table.firebaseapp.com",
+          databaseURL: "https://the-world-table.firebaseio.com",
+          projectId: "the-world-table"
+        },
+        dev = {
+          apiKey: "AIzaSyB2FRhWjFGCvUWtFL8cmi9hR8XVJdc455A",
+          authDomain: "twt-dev-ms.firebaseapp.com",
+          databaseURL: "https://twt-dev-ms.firebaseio.com",
+          projectId: "twt-dev-ms"
+        };
+    firebase.initializeApp(dev);
+  </script>
+  <script type='text/javascript' src='bower_components/firebase-passport-login/client/firebase-passport-login.js'></script>
+  <script type='text/javascript' src='bower_components/webcomponentsjs/webcomponents-lite.min.js'></script>
+  <link rel="import" href="elements/twt-user-info-test.html">
+</head>
+<body>
+<div style="text-align: center;">
+  <button onclick="auth.login('facebook')">Facebook Login</button>
+  <button onclick="auth.login('google')">Google Login</button>
+  <button onclick="auth.login('twitter')">Twitter Login</button>
+  <button onclick="auth.login('disqus')">Disqus Login</button>
+  <button onclick="auth.logout()">Logout</button>
+</div>
+<twt-user-info-test>not working</twt-user-info-test>
+<pre id="out" style="width: 100%; min-height: 3em; margin-top: 10px;"></pre>
+<script type='text/javascript'>
+  var authConfig = {
+        firebaseApp: firebase,
+        firebaseConfig: dev,
+        authURL: 'https://auth.worldtable.co/auth/'
+      },
+      out = document.getElementById('out');
+  var auth = new FirebasePassportLogin(authConfig, function(error, user) {
+    if (error) {
+      // an error occurred while attempting login
+      console.log(error);
+      out.innerHTML = `Error:\n\n` + (error && JSON.stringify(error, 0, 2) || 'unknown');
+      let pel = document.querySelector('twt-user-info-test');
+      if (pel && pel.uid) {
+        pel.uid = null;
+        pel.user = null;
+      }
+    } else if (user) {
+      // user authenticated with Firebase
+      var msg = `User ID: ${user.uid}  Provider: ${user.provider}`;
+      console.log('User ID: ' + user.uid + ', Provider: ' + user.provider);
+      console.log(user);
+      out.innerHTML = `${msg}\n\n` + JSON.stringify(user, 0, 2);
+      let pel = document.querySelector('twt-user-info-test');
+      if (pel) {
+        pel.uid = user.uid;
+        pel.oauthUser = user;
+      }
+    } else {
+      // user is logged out
+      console.log('User is logged out');
+      out.innerHTML = `User not logged in\n`
+      let pel = document.querySelector('twt-user-info-test');
+      if (pel && pel.uid) {
+        pel.uid = null;
+        pel.user = null;
+      }
+    }
+  });
+
+</script>
+</body>
+</html>

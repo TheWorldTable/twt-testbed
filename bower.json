@@ -1,0 +1,24 @@
+{
+  "name": "twt-testbed",
+  "description": "testbed for migration from firebase SDK v2 to v3",
+  "main": "index.html",
+  "authors": [
+    "Mike Scalora"
+  ],
+  "license": "none",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests",
+    ".idea"
+  ],
+  "dependencies": {
+    "polymerfire": "1.x",
+    "polymer": "<2.0",
+    "firebase-passport-login": "https://github.com/TheWorldTable/firebase-passport-login.git#auth-3"
+  }
+}
