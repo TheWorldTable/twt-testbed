@@ -2,28 +2,50 @@
 <head>
   <link rel="icon" type="image/png" href="https://app.worldtable.co/images/logo-table.png" />
   <title>TWT Test Firebase-Passport Example - Rules Test & firebase-query</title>
-  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.7.0/firebase-database.js"></script>
-  <script>
-    // Initialize Firebase
-    const prod = {
-          apiKey: "AIzaSyCgU6F6LAYuknFqD90ICKUKan80bu2K7qo",
-          authDomain: "the-world-table.firebaseapp.com",
-          databaseURL: "https://the-world-table.firebaseio.com",
-          projectId: "the-world-table"
-        },
-        dev = {
-          apiKey: "AIzaSyB2FRhWjFGCvUWtFL8cmi9hR8XVJdc455A",
-          authDomain: "twt-dev-ms.firebaseapp.com",
-          databaseURL: "https://twt-dev-ms.firebaseio.com",
-          projectId: "twt-dev-ms"
-        };
-    firebase.initializeApp(dev);
-  </script>
-  <script type='text/javascript' src='bower_components/firebase-passport-login/client/firebase-passport-login.js'></script>
+  <script src="//www.gstatic.com/firebasejs/5.7.1/firebase-app.js"></script>
+  <script src="//www.gstatic.com/firebasejs/5.7.1/firebase-database.js"></script>
+  <script src="//www.gstatic.com/firebasejs/5.7.1/firebase-auth.js"></script>
   <script type='text/javascript' src='bower_components/webcomponentsjs/webcomponents-lite.min.js'></script>
+  <script type='text/javascript' src='dev-firebase-passport-login/client/firebase-passport-login.js'></script>
+  <script>
+    // // Initialize Firebase
+    // const prod = {
+    //       apiKey: "AIzaSyCgU6F6LAYuknFqD90ICKUKan80bu2K7qo",
+    //       authDomain: "the-world-table.firebaseapp.com",
+    //       databaseURL: "https://the-world-table.firebaseio.com",
+    //       projectId: "the-world-table"
+    //     },
+    //     dev = {
+    //       apiKey: "AIzaSyB2FRhWjFGCvUWtFL8cmi9hR8XVJdc455A",
+    //       authDomain: "twt-dev-ms.firebaseapp.com",
+    //       databaseURL: "https://twt-dev-ms.firebaseio.com",
+    //       projectId: "twt-dev-ms"
+    //     };
+    // firebase.initializeApp(dev);
+
+    // Initialize Firebase
+    var config = {
+      apiKey: "AIzaSyB2FRhWjFGCvUWtFL8cmi9hR8XVJdc455A",
+      authDomain: "twt-dev-ms.firebaseapp.com",
+      databaseURL: "https://twt-dev-ms.firebaseio.com",
+      projectId: "twt-dev-ms",
+      storageBucket: "twt-dev-ms.appspot.com",
+      messagingSenderId: "469365682883"
+    };
+    window.TWT_FIREBASE_APP = firebase.initializeApp(config, 'twt-dev-ms');
+    var authOptions = {
+          firebaseApp: window.TWT_FIREBASE_APP,
+          firebaseConfig: config,
+          firebaseAuth: window.TWT_FIREBASE_APP.auth(),
+          firebaseDB: window.TWT_FIREBASE_APP.database(),
+          authURL: 'https://auth2.worldtable.co/auth/'
+        };
+    console.log(window.TWT_FIREBASE_APP.auth().currentUser);
+    console.log('ok');
+  </script>
   <link rel="import" href="elements/twt-user-info-test.html">
+  <!--<link rel="import" href="../bower_components/polymerfire/firebase-app.html">-->
+  <!--<link rel="import" href="bower_components/polymerfire/firebase-query.html">-->
 </head>
 <body>
 <div style="text-align: center;">
@@ -36,13 +58,8 @@
 <twt-user-info-test>not working</twt-user-info-test>
 <pre id="out" style="width: 100%; min-height: 3em; margin-top: 10px;"></pre>
 <script type='text/javascript'>
-  var authConfig = {
-        firebaseApp: firebase,
-        firebaseConfig: dev,
-        authURL: 'https://auth.worldtable.co/auth/'
-      },
-      out = document.getElementById('out');
-  var auth = new FirebasePassportLogin(authConfig, function(error, user) {
+  var out = document.getElementById('out');
+  var auth = new FirebasePassportLogin(authOptions, function(error, user) {
     if (error) {
       // an error occurred while attempting login
       console.log(error);
@@ -57,12 +74,15 @@
       var msg = `User ID: ${user.uid}  Provider: ${user.provider}`;
       console.log('User ID: ' + user.uid + ', Provider: ' + user.provider);
       console.log(user);
-      out.innerHTML = `${msg}\n\n` + JSON.stringify(user, 0, 2);
+      let cleanUser = Object.assign({}, user);
+      delete cleanUser.token;
+      out.innerHTML = `${msg}\n\n` + JSON.stringify(cleanUser, 0, 2);
       let pel = document.querySelector('twt-user-info-test');
       if (pel) {
         pel.uid = user.uid;
         pel.oauthUser = user;
       }
+
     } else {
       // user is logged out
       console.log('User is logged out');

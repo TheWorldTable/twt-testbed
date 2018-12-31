@@ -1,5 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-
+<link rel="import" href="twt-firebase-collection.html">
+<link rel="import" href="twt-firebase.html">
 
 <dom-module id="twt-user-info-test">
 
@@ -10,6 +11,7 @@
         min-height: 16px;
         min-width: 16px;
         display: block;
+        font-family: sans-serif;
         Xoutline: 2px dashed red;
       }
       [twt-uid],[twt-userId] {
@@ -32,13 +34,45 @@
         font-family: monospace;
         color: green;
       }
+      [twt-site-info] h3,
+      [twt-site-info] h4,
+      [twt-site-info] [twt-site-url] {
+        margin: 1px 0 0 16px;
+        padding: 1px 0;
+      }
+      [twt-site-info] h3 {
+        margin-top: 4px;
+        margin-left: 0;
+      }
+      [twt-site-info] [twt-site-url] {
+        font-family: monospace;
+        font-weight: bold;
+        font-size: 15px;
+        text-decoration: none;
+      }
+      [twt-site-info] [twt-site-url]:hover {
+        text-decoration: underline;
+      }
     </style>
     <div>
       <div twt-uid>[[uid]]</div>
-      <div twt-userId>[[userId]]</div>
-      <firebase-query
-        path="/u"
-      ></firebase-query>
+      <div twt-userId>[[userId]] <span>[[asJson(none)]]</span></div>
+      <twt-firebase-collection
+          order-by-key="true"
+          limit-to-first="5"
+          location="https://twt-dev-ms.firebaseio.com/sites"
+          data="{{sites}}"></twt-firebase-collection>
+      <template is="dom-repeat" items="[[sites]]" as="site">
+        <div twt-site-info>
+          <h3>[[site.name]]</h3>
+          <h4>[[site.__firebaseKey__]]</h4>
+          <a twt-site-url href="[[site.uriPrefix]]">[[site.uriPrefix]]</a>
+        </div>
+      </template>
+      <div>
+        <twt-firebase-collection location="[[loc]]" data="[[sites]]" order-by-child="[['name']]"></twt-firebase-collection>
+        <twt-firebase-document location="[[docLoc]]" data="[[site]]" order-by-child="[['name']]"></twt-firebase-document>
+      </div>
       <pre twt-user>[[asJson(user)]]</pre>
       <pre twt-user-private>[[asJson(userPrivate)]]</pre>
       <pre twt-oauth-user>[[asJson(oauthUser)]]</pre>
@@ -49,6 +83,8 @@
 
 <script>
   (function() {
+    const firebaseApp = window.TWT_FIREBASE_APP;
+
     Polymer({
       is: 'twt-user-info-test',
       properties: {
@@ -70,14 +106,29 @@
         },
         userPrivate: {
           type: Object
+        },
+        none: Boolean,
+        sites: {
+          type: Object
+        },
+        loc: {
+          type: String
+        },
+        site: {
+          type: Object
+        },
+        docLoc: {
+          type: String,
+          value: 'sites/0000014b3d13e9d9_232a8a6'
         }
       },
       observers: [
       ],
+      listeners: {
+        'firebase-ready': 'firebaseReady'
+      },
+
       attached: function () {
-        if (localStorage && localStorage.twtTestUserId) {
-          this.userId = localStorage.twtTestUserId;
-        }
       },
       valueChanged: function (newVal) {
         console.log('value changed: %o', this.value);
@@ -87,7 +138,7 @@
         console.log('uid changed: %o', this.uid);
         this.userId = null;
         if (this.uid) {
-          firebase.database().ref(`externalAccounts/${this.uid}`).once('value').then(function (snap) {
+          firebaseApp.database().ref(`externalAccounts/${this.uid}`).once('value').then(function (snap) {
             self.userId = snap.val();
             if (self.userId) {
               localStorage.twtTestUserId = self.userId;
@@ -98,24 +149,34 @@
       userIdChanged: function () {
         let self = this;
         if (self.userId) {
-          firebase.database().ref(`users/${self.userId}`).once('value').then(function (snap) {
+          firebaseApp.database().ref(`users/${self.userId}`).once('value').then(function (snap) {
             self.user = snap.val();
           }).catch(function (err) {
             self.user = err;
           });
-          firebase.database().ref(`usersPrivate/${self.userId}`).once('value').then(function (snap) {
+          firebaseApp.database().ref(`usersPrivate/${self.userId}`).once('value').then(function (snap) {
             self.userPrivate = snap.val();
           }).catch(function (err) {
             self.userPrivate = err;
           });
           localStorage.twtTestUserId = self.userId;
+          self.loc = firebaseApp.database().ref('sites').toString();
         } else {
+          self.loc = null;
           self.user = null;
           self.userPrivate = null;
         }
       },
       asJson: function (value) {
         return value ? JSON.stringify(value, 0, 2) : '';
+      },
+      comments: function (userId) {
+        return `usersActivity/${userId}/authoredComments`
+      },
+      firebaseReady: function (data) {
+        if (!this.userId && localStorage && localStorage.twtTestUserId) {
+          this.userId = localStorage.twtTestUserId;
+        }
       }
     });
   })();

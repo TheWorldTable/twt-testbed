@@ -17,7 +17,6 @@
     ".idea"
   ],
   "dependencies": {
-    "polymerfire": "1.x",
     "polymer": "<2.0",
     "firebase-passport-login": "https://github.com/TheWorldTable/firebase-passport-login.git#auth-3"
   }
